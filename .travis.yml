@@ -31,6 +31,16 @@ matrix:
        compiler: gcc
        sudo: false
        dist: trusty
+#======================================================================
+# Build Matrix for multiple docker images
+# Following unidata/netcdf-c on github
+#======================================================================
+env:
+  matrix:
+    # ./script.csh BUILD clean_opt conf_num nest_opt build_opt <conf_opt1 <conf_opt2>> <env_var1=val1 <env_var2=val2>>
+    #    - DOCKIMG=base1 CONFNUM=34 NESTNUM=1 BUILDOPT='em_real -d J=-j@3'   
+  - DOCKCO=03
+  - DOCKCO=03DF  
 
 #======================================================================
 # Docker does not work on Mac
@@ -51,19 +61,10 @@ before_install:
 # Here are the run steps
 #======================================================================
 script:
-  - date
   - sed -e 's/_HERE1_/"DAVE START"/' -e 's/_HERE2_/"DAVE END CLONE"/' Dockerfile-template > Dockerfile
-  - date
   - docker build -t wrf_regtest --build-arg argname=regtest .
-  - date
-  - docker images -a
-  - date
   - docker run -d -t --name test_001 wrf_regtest
-  - date
-  - docker ps -a
-  - date
   - docker exec test_001 ./script.csh BUILD CLEAN 34 1 em_real -d J=-j@3
-  - date
   - OK=0
   - |
       if [ $OK -eq 0 ] ; then
@@ -86,7 +87,8 @@ script:
   - |
       if [ $OK_wrf = 0 ] && ([ $OK_real = 0 ] || [ $OK_nmm = 0 ] || [ $OK_ideal = 0 ]) ; then
          date
-         docker exec test_001 ./script.csh RUN em_real 34 em_real 01 NP=3
+         #docker exec test_001 ./script.csh RUN em_real 34 em_real 01 NP=3
+         docker exec test_001 ./script.csh RUN em_real 34 em_real $DOCKCO NP=3
          date
          docker exec test_001 cat WRF/test/em_real/real.print.out
          date
