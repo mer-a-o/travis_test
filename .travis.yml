@@ -32,7 +32,7 @@ matrix:
        sudo: false
        dist: trusty
        DOCKCO=03
- - os: linux
+      - os: linux
        compiler: gcc
        sudo: false
        dist: trusty
