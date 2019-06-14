@@ -32,11 +32,6 @@ matrix:
        sudo: false
        dist: trusty
        DOCKCO=03
-      - os: linux
-       compiler: gcc
-       sudo: false
-       dist: trusty
-       DOCKCO=03DF
 #======================================================================
 # Build Matrix for multiple docker images
 # Following unidata/netcdf-c on github
