@@ -25,18 +25,25 @@ addons:
 #======================================================================
 # Build Matrix
 #======================================================================
-env:
-  matrix:
-    include:
+matrix:
+   include:
      - os: linux
        compiler: gcc
        sudo: false
        dist: trusty
-       DOCKCO=03
 #======================================================================
 # Build Matrix for multiple docker images
 # Following unidata/netcdf-c on github
 #======================================================================
+env:
+  matrix:
+    # ./script.csh BUILD clean_opt conf_num nest_opt build_opt <conf_opt1 <conf_opt2>> <env_var1=val1 <env_var2=val2>>
+    #    - DOCKIMG=base1 CONFNUM=34 NESTNUM=1 BUILDOPT='em_real -d J=-j@3'   
+  - DOCKCO=03
+  - DOCKCO=03DF  
+
+    
+  
     # ./script.csh BUILD clean_opt conf_num nest_opt build_opt <conf_opt1 <conf_opt2>> <env_var1=val1 <env_var2=val2>>
     #    - DOCKIMG=base1 CONFNUM=34 NESTNUM=1 BUILDOPT='em_real -d J=-j@3'   
 
