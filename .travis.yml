@@ -38,7 +38,14 @@ matrix:
        sudo: false
        dist: trusty
        env: DOCKCO=03DF
-  
+
+
+     - os: linux
+       compiler: gcc
+       sudo: false
+       dist: trusty
+       env: DOCKCO=03FD 
+
     # ./script.csh BUILD clean_opt conf_num nest_opt build_opt <conf_opt1 <conf_opt2>> <env_var1=val1 <env_var2=val2>>
     #    - DOCKIMG=base1 CONFNUM=34 NESTNUM=1 BUILDOPT='em_real -d J=-j@3'   
 
