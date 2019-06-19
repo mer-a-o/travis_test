@@ -12,74 +12,113 @@ language: fortran
 # Environment
 #======================================================================
 
-# Code is Fortran.
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - gcc-6
-      - gfortran-6
-      - g++-6
+      - gcc-8
+      - gfortran-8
+      - g++-8
       - lcov
 
 #======================================================================
 # Build Matrix
-#======================================================================
+#======================================================================   
 matrix:
    include:
      - os: linux
        compiler: gcc
        sudo: false
        dist: trusty
-     - os: osx
+       env: DOCKCO=03
+
+     - os: linux
        compiler: gcc
-       osx_image: xcode9.4
+       sudo: false
+       dist: trusty
+       env: DOCKCO=03DF
+
+    # ./script.csh BUILD clean_opt conf_num nest_opt build_opt <conf_opt1 <conf_opt2>> <env_var1=val1 <env_var2=val2>>
+    #    - DOCKIMG=base1 CONFNUM=34 NESTNUM=1 BUILDOPT='em_real -d J=-j@3'   
+
+#======================================================================
+# Docker does not work on Mac
+#======================================================================
+services:
+  - docker
 
 #======================================================================
 # Building
 #======================================================================
 before_install:
   - |
-      if [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
-          brew install gcc@7 || true;
-          brew link --overwrite gcc@7;
-      fi
-  - |
       if [[ "$TRAVIS_OS_NAME" == "linux" ]] ; then
           pip install --user cpp-coveralls
       fi
 
-before_script:
-  - |
-      if [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
-          export CC="clang" FC="gfortran-7" CXX="clang++" ;
-      fi
-  - |
-      if [[ "$TRAVIS_OS_NAME" == "linux" ]] ; then
-          export CC="gcc-6" FC="gfortran-6" CXX="g++-6" ;
-      fi
-#  - export CC="gcc-6" FC="gfortran-6" CXX="g++-6" ;
-
+#======================================================================
+# Here are the run steps
+#======================================================================
 script:
-  - make
+  - sed -e 's/_HERE1_/"DAVE START"/' -e 's/_HERE2_/"DAVE END CLONE"/' Dockerfile-template > Dockerfile
+  - docker build -t wrf_regtest --build-arg argname=regtest .
+  - docker run -d -t --name test_001 wrf_regtest
+  - docker exec test_001 ./script.csh BUILD CLEAN 34 1 em_real -d J=-j@3
+  - OK=0
   - |
-      if [[ "$TRAVIS_OS_NAME" == "linux" ]] ; then
-          export LD_LIBRARY_PATH=${PWD}/schemes/check/src/check-build
-          make test
-      fi
+      if [ $OK -eq 0 ] ; then
+        echo FILE STATUS
+        docker exec test_001 ls -ls WRF/main/wrf.exe
+        OK_wrf=$?
+        echo OK_wrf $OK_wrf
+        docker exec test_001 ls -ls WRF/main/real.exe
+        OK_real=$?
+        echo OK_real $OK_real
+        docker exec test_001 ls -ls WRF/main/real_nmm.exe
+        OK_nmm=$?
+        echo OK_nmm $OK_nmm
+        docker exec test_001 ls -ls WRF/main/ideal.exe
+        OK_ideal=$?
+        echo OK_ideal $OK_ideal
+      fi 
+  - date
+  - docker exec test_001 ls -ls WRF/main
   - |
-      if [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
-          export DYLD_LIBRARY_PATH=${PWD}/schemes/check/src/check-build
-          make test
+      if [ $OK_wrf = 0 ] && ([ $OK_real = 0 ] || [ $OK_nmm = 0 ] || [ $OK_ideal = 0 ]) ; then
+         date
+         #docker exec test_001 ./script.csh RUN em_real 34 em_real 01 NP=3
+         docker exec test_001 ./script.csh RUN em_real 34 em_real $DOCKCO NP=3
+         date
+         docker exec test_001 cat WRF/test/em_real/real.print.out
+         date
+         docker exec test_001 ls -ls WRF/test/em_real
+         date
+         docker exec test_001 ls -ls wrfoutput
+         date
+      else
+         docker exec test_001 gfortran --version
+         docker exec test_001 gcc --version
+         docker exec test_001 ls -ls WRF/main
+         docker exec test_001 ls -ls WRF/compile.log.em_real.34
+         docker exec test_001 grep Error WRF/compile.log.em_real.34
+         docker exec test_001 cat WRF/compile.log.em_real.34
+         date
       fi
+  - docker stop test_001
+  - date
+  - docker rm test_001
+  - date
+  - docker rmi wrf_regtest
+  - date
+  - env | grep TRAVIS_
 
 #======================================================================
 # Notifications
 #======================================================================
 notifications:
   email:
-    recipients: gill@ucar.edu
+    recipients: maryamao@ucar.edu
     on_success: always
     on_failure: always
 
