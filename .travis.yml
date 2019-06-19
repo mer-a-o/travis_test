@@ -28,9 +28,9 @@ addons:
 matrix:
    include:
      - os: linux
-       compiler: gcc
-       sudo: false
-       dist: trusty
+       #       compiler: gcc
+       #       sudo: false
+       #       dist: trusty
        env: DOCKCO=03
 
      - os: linux
